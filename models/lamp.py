@@ -36,7 +36,8 @@ class LAMP(MessagePassing):
         Args:
             X: torch.tensor (batch_size,num_nodes,dim)
         """
-        num_nodes,d,device=x.shape[0],x.shape[1],x.device
+        batch_size,num_nodes,dim=x.shape
+        device=x.device
         adj=[[] for _ in range(num_nodes)]
         for idx in range(edge_index.size(1)):
             adj[edge_index[0,idx]].append(edge_index[1,idx])
@@ -44,19 +45,20 @@ class LAMP(MessagePassing):
         
         adj=[torch.tensor(t,device=device) for t in adj]
         
-        
         att_scores=self.att_layer(x) ##(batch_size,n,n)
-        att_sum=torch.cat([self.att_scores[:,i,adj[i]].sum(axis=2).view(-1).unsqueeze(1) \
+        att_sum=torch.cat([att_scores[:,i,adj[i]].sum(axis=1).view(-1).unsqueeze(1) \
                                    for i in range(num_nodes)],axis=1) ##(batch_size,n)
         att_scores=att_scores/att_sum
-        return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=self.message_linear(x),
-                              att_scores=att_scores,x_old=x)
+        
+        self.x_old=x
+        self.att_scores=att_scores
+        return self.propagate(edge_index, size=(x.size(0), x.size(0)),dim=1, x=self.message_linear(x))
     
     def message(self,x_j,edge_index,att_scores):
-        return att_scores[edge_index[0],edge_index[1]]*x_j
+        return self.att_scores[edge_index[0],edge_index[1]]*x_j
     
     def update(self,aggr_out,x_old):
-        return x_old+self.update_mlp(aggr_out)
+        return self.x_old+self.update_mlp(aggr_out)
         
 
 
