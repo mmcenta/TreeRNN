@@ -1,6 +1,8 @@
 import os.path as path
 from time import time
 import torch
+import torch_geometric
+
 
 def read_rcv1_files():
     ##returns dict containing associating ids and x: list of training tokens and y: list of tags
@@ -55,8 +57,6 @@ def revoc_data(data,vocab,n_tok):
     aux.sort(key = lambda w :vocab[w][1],reverse=True)
     aux=aux[:n_tok]
     ivocab={v[0]:k for k,v in vocab.items()}
-    for i in range(100):
-        print(str(i)+' '+ivocab.get(i,'No voc'))
     res_voc={k:v+2 for v,k in enumerate(aux)}
     for t in data:
         for i in range(len(t[0])):

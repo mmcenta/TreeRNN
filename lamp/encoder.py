@@ -11,5 +11,6 @@ class Enc(nn.Module):
         x=self.emb(x)
         x,_=self.gru(x)
         return x.mean(axis=0)
+
         
         
